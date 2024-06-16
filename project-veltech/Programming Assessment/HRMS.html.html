@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>HR Management System</h1>
+    <div id="employee-form">
+        <h2>Add/Edit Employee</h2>
+        <form id="employeeForm">
+            <input type="hidden" id="employeeId">
+            <input type="text" id="firstName" placeholder="First Name" required>
+            <input type="text" id="lastName" placeholder="Last Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="number" id="departmentId" placeholder="Department ID" required>
+            <input type="number" id="roleId" placeholder="Role ID" required>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+    <div id="employee-list">
+        <h2>Employee List</h2>
+        <ul id="employees"></ul>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>

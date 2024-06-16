@@ -1,0 +1,111 @@
+import os
+
+class Config:
+    MYSQL_HOST = 'localhost'
+    MYSQL_USER = 'root'
+    MYSQL_PASSWORD = 'password'
+    MYSQL_DB = 'hrms'
+    SECRET_KEY = 'your_secret_key'
+
+from flask_jwt_extended import JWTManager
+
+def init_jwt(app):
+    jwt = JWTManager(app)
+    return jwt
+
+from flask import jsonify
+from app import mysql
+
+class Employee:
+    @staticmethod
+    def get_all_employees():
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM employees")
+        rows = cur.fetchall()
+        cur.close()
+        return jsonify(rows)
+
+    @staticmethod
+    def get_employee_by_id(employee_id):
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM employees WHERE id = %s", (employee_id,))
+        row = cur.fetchone()
+        cur.close()
+        return jsonify(row)
+
+    @staticmethod
+    def add_employee(data):
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO employees (first_name, last_name, email, department_id, role_id) VALUES (%s, %s, %s, %s, %s)",
+                    (data['first_name'], data['last_name'], data['email'], data['department_id'], data['role_id']))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({"message": "Employee added successfully"})
+
+    @staticmethod
+    def update_employee(employee_id, data):
+        cur = mysql.connection.cursor()
+        cur.execute("UPDATE employees SET first_name = %s, last_name = %s, email = %s, department_id = %s, role_id = %s WHERE id = %s",
+                    (data['first_name'], data['last_name'], data['email'], data['department_id'], data['role_id'], employee_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({"message": "Employee updated successfully"})
+
+    @staticmethod
+    def delete_employee(employee_id):
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM employees WHERE id = %s", (employee_id,))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({"message": "Employee deleted successfully"})
+
+from flask import Blueprint, request
+from models.employee import Employee
+from flask_jwt_extended import jwt_required
+
+employee_routes = Blueprint('employee_routes', __name__)
+
+@employee_routes.route('/employees', methods=['GET'])
+@jwt_required()
+def get_employees():
+    return Employee.get_all_employees()
+
+@employee_routes.route('/employee/<int:employee_id>', methods=['GET'])
+@jwt_required()
+def get_employee(employee_id):
+    return Employee.get_employee_by_id(employee_id)
+
+@employee_routes.route('/employee', methods=['POST'])
+@jwt_required()
+def add_employee():
+    data = request.get_json()
+    return Employee.add_employee(data)
+
+@employee_routes.route('/employee/<int:employee_id>', methods=['PUT'])
+@jwt_required()
+def update_employee(employee_id):
+    data = request.get_json()
+    return Employee.update_employee(employee_id, data)
+
+@employee_routes.route('/employee/<int:employee_id>', methods=['DELETE'])
+@jwt_required()
+def delete_employee(employee_id):
+    return Employee.delete_employee(employee_id)
+
+from flask import Flask
+from flask_mysqldb import MySQL
+from config import Config
+from utils.jwt_util import init_jwt
+from routes.employee_routes import employee_routes
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+mysql = MySQL(app)
+jwt = init_jwt(app)
+
+# Register blueprints
+app.register_blueprint(employee_routes)
+
+if __name__ == '__main__':
+    app.run(debug=True)
